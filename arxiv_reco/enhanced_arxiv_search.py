@@ -40,6 +40,7 @@ def main():
 
         if keywords.isdigit():
             raise Exception('Numbers are not keywords!')
+            break
 
         if keywords == 'exit':
             break
