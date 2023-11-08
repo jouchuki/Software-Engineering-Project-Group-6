@@ -118,11 +118,13 @@ def recommend_for_article(graph, model, article_index, num_recommendations=10):
     # Return the top article indices
     return sorted_indices[:num_recommendations].cpu().numpy()
 
-
 def main():
     while True:
         print("\n--- ArXiv Recommendation System ---")
         keywords = input("Enter keywords to search on ArXiv (or 'exit' to quit): ")
+
+        if keywords.isdigit():
+            raise Exception('Numbers are not keywords!')
 
         if keywords == 'exit':
             break
