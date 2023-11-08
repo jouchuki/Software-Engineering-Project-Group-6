@@ -96,11 +96,6 @@ def construct_graph_from_embeddings(articles):
     graph = Data(x=x, metadata=metadata)  # Attach the metadata to the graph
     return graph
 
-
-def construct_graph(articles):
-    return construct_graph_from_embeddings(articles)
-
-
 # 3. Predictions
 def recommend_for_article(graph, model, article_index, num_recommendations=10):
     # For all possible edges between the given article and all other articles
@@ -133,7 +128,7 @@ def main():
             break
 
         articles = query_arxiv(keywords)
-        graph = construct_graph(articles)
+        graph = construct_graph_from_embeddings(articles)
         model_path = "ArxivReco.pth"
         model = ArxivReco(graph.x.size(1)).to(device)
         model.load_state_dict(torch.load(model_path))
@@ -175,7 +170,7 @@ def main():
 
             print("\nTop Recommendations:")
             for idx in recommended_indices:
-                print(graph.metadata[idx]['title'])  # Adjust this as per your graph's structure
+                print(graph.metadata[idx]['title'])
 
 if __name__ == "__main__":
     main()
