@@ -1,0 +1,87 @@
+import torch
+import requests
+from transformers import RobertaTokenizer, RobertaModel
+from torch_geometric.data import Data
+from bs4 import BeautifulSoup
+
+# Load pre-trained RoBERTa tokenizer and model
+tokenizer = RobertaTokenizer.from_pretrained('roberta-base')
+roberta_model = RobertaModel.from_pretrained('roberta-base')
+
+ARXIV_API_URL = "http://export.arxiv.org/api/query?"
+
+def get_roberta_embedding(text, model=roberta_model, tokenizer=tokenizer):
+    # Tokenize the text and convert it to tensor format
+    inputs = tokenizer(text, return_tensors="pt", max_length=512, truncation=True)
+
+    # Get embeddings
+    with torch.no_grad():
+        outputs = model(**inputs)
+
+    # Extract [CLS] token's embedding and return
+    return outputs.last_hidden_state[:, 0, :].squeeze().numpy().tolist()
+
+# 1. Fetch Data from ArXiv
+def query_arxiv(keywords, max_results=100):
+    query = f"search_query=all:{keywords}&start=0&max_results={max_results}"
+    response = requests.get(ARXIV_API_URL + query)
+
+    if response.status_code != 200:
+        raise Exception("Failed to fetch data from ArXiv")
+
+    # Parsing the XML using BeautifulSoup
+    soup = BeautifulSoup(response.text, 'xml')
+    entries = soup.find_all('entry')
+
+    articles = []
+    for entry in entries:
+        title = entry.title.string
+        summary = entry.summary.string
+        link = entry.id.string
+        articles.append({
+        'title': title,
+        'summary': summary,
+        'link': link,
+        'title_embedding': get_roberta_embedding(title),
+        'summary_embedding': get_roberta_embedding(summary)
+    })
+
+    return articles
+
+# 2. Preprocess & Construct Graph
+def construct_graph_from_embeddings(articles):
+    node_features_title = [article['title_embedding'] for article in articles]
+    node_features_summary = [article['summary_embedding'] for article in articles]
+
+    x_title = torch.tensor(node_features_title, dtype=torch.float)
+    x_summary = torch.tensor(node_features_summary, dtype=torch.float)
+    x = torch.cat((x_title, x_summary), dim=1)
+
+    # Storing metadata as a list of dictionaries for each node (article)
+    metadata = [{'title': article['title'], 'summary': article['summary'], 'link': article['link']} for article in articles]
+
+    graph = Data(x=x, metadata=metadata)  # Attach the metadata to the graph
+    return graph
+
+# 3. Predictions
+def recommend_for_article(graph, model, article_index, num_recommendations=10):
+    # For all possible edges between the given article and all other articles
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    all_other_articles = torch.arange(graph.x.size(0), device=device)
+    all_edges = torch.stack([torch.full_like(all_other_articles, article_index), all_other_articles])
+
+    # Predict the likelihood of relationships
+    with torch.no_grad():
+        predictions = torch.sigmoid(model(graph.x, all_edges).squeeze())
+
+    # Filter out the input article index from the recommendations
+    mask = all_other_articles != article_index
+    filtered_predictions = predictions[mask]
+    filtered_indices = all_other_articles[mask]
+
+    # Sort by prediction score
+    _, sorted_relative_indices = filtered_predictions.sort(descending=True)
+    sorted_indices = filtered_indices[sorted_relative_indices]
+
+    # Return the top article indices
+    return sorted_indices[:num_recommendations].cpu().numpy()
