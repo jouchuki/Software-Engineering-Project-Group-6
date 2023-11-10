@@ -1,8 +1,36 @@
 import torch
+import torch.nn.functional as F
+from torch_geometric.nn import GCNConv
 import requests
-from transformers import RobertaTokenizer, RobertaModel
+from transformers import RobertaTokenizer, RobertaModel, RobertaForMaskedLM
 from torch_geometric.data import Data
 from bs4 import BeautifulSoup
+
+class ArxivReco(torch.nn.Module):
+    def __init__(self, num_features):
+        super(ArxivReco, self).__init__()
+        self.conv1 = GCNConv(num_features, 128)
+        self.conv2 = GCNConv(128, 64)
+        self.conv3 = GCNConv(64, 32)
+        self.classifier = torch.nn.Linear(2 * 32, 1)
+        self.dropout = torch.nn.Dropout(0.5)
+
+    def forward(self, x, edge_index):
+        x = self.conv1(x, edge_index)
+        x = F.relu(x)
+        x = self.dropout(x)
+
+        x = self.conv2(x, edge_index)
+        x = F.relu(x)
+        x = self.dropout(x)
+
+        x = self.conv3(x, edge_index)
+        x = F.relu(x)
+
+        start, end = edge_index
+        edge_features = torch.cat([x[start], x[end]], dim=1)
+        return self.classifier(edge_features)
+
 
 # Load pre-trained RoBERTa tokenizer and model
 tokenizer = RobertaTokenizer.from_pretrained('roberta-base')
@@ -85,3 +113,12 @@ def recommend_for_article(graph, model, article_index, num_recommendations=10):
 
     # Return the top article indices
     return sorted_indices[:num_recommendations].cpu().numpy()
+
+def recommendations(graph, model, selected_idx):
+    recommended_indices = recommend_for_article(graph, model, selected_idx, num_recommendations=10)
+    reco_list = []
+    reco = 0
+    for idx in recommended_indices:
+        reco_list.append(graph.metadata[idx])
+        reco += 1
+    return reco_list
