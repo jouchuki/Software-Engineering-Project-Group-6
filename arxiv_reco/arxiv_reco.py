@@ -5,6 +5,8 @@ import requests
 from transformers import RobertaTokenizer, RobertaModel, RobertaForMaskedLM
 from torch_geometric.data import Data
 from bs4 import BeautifulSoup
+import numpy as np
+
 
 class ArxivReco(torch.nn.Module):
     def __init__(self, num_features):
@@ -112,13 +114,9 @@ def recommend_for_article(graph, model, article_index, num_recommendations=10):
     sorted_indices = filtered_indices[sorted_relative_indices]
 
     # Return the top article indices
+    print(sorted_indices[:num_recommendations].cpu().numpy())
     return sorted_indices[:num_recommendations].cpu().numpy()
 
-def recommendations(graph, model, selected_idx):
-    recommended_indices = recommend_for_article(graph, model, selected_idx, num_recommendations=10)
-    reco_list = []
-    reco = 0
-    for idx in recommended_indices:
-        reco_list.append(graph.metadata[idx])
-        reco += 1
-    return reco_list
+
+def find_elements(articles, reco):
+    return [articles[i] for i in reco]

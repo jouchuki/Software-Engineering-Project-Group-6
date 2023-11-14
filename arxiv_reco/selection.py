@@ -12,12 +12,14 @@ def prompt_for_keywords():
     else:
         return keywords
 
+
 def article_details(selected_idx, graph):
     # Display the details of the selected article
     print("\nSelected Article Details:")
     print(f"Title: {graph.metadata[selected_idx]['title']}")
     print(f"Summary: {graph.metadata[selected_idx]['summary']}")
     print(f"Link: {graph.metadata[selected_idx]['link']}")
+
 
 def choose_article(articles, batch_size):
     selected_idx = None
@@ -41,6 +43,7 @@ def choose_article(articles, batch_size):
             print("Invalid input. Please try again.")
 
     return selected_idx
+
 
 def selection_pipeline(selected_idx, graph, model, batch_size):
     # Function to give user an option to select an article
