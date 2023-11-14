@@ -7,6 +7,7 @@ from torch_geometric.data import Data
 from bs4 import BeautifulSoup
 import numpy as np
 
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 class ArxivReco(torch.nn.Module):
     def __init__(self, num_features):
@@ -39,6 +40,17 @@ tokenizer = RobertaTokenizer.from_pretrained('roberta-base')
 roberta_model = RobertaModel.from_pretrained('roberta-base')
 
 ARXIV_API_URL = "http://export.arxiv.org/api/query?"
+
+
+def prerequisites(keywords):
+    articles = query_arxiv(keywords)
+    graph = construct_graph_from_embeddings(articles)
+    model_path = "ArxivReco.pth"
+    model = ArxivReco(graph.x.size(1)).to(device)
+    model.load_state_dict(torch.load(model_path))
+    model.eval()
+    return articles, graph, model
+
 
 def get_roberta_embedding(text, model=roberta_model, tokenizer=tokenizer):
     # Tokenize the text and convert it to tensor format
@@ -119,4 +131,5 @@ def recommend_for_article(graph, model, article_index, num_recommendations=10):
 
 
 def find_elements(articles, reco):
-    return [articles[i] for i in reco]
+    reco_metadata = [articles[i] for i in reco]
+    return reco_metadata

@@ -1,6 +1,6 @@
 from translate import ask_for_translation
-from arxiv_reco import recommendations
-
+from summarisation import get_summary
+from arxiv_reco import recommend_for_article, find_elements
 
 def prompt_for_keywords():
     print("\n--- ArXiv Recommendation System ---")
@@ -13,12 +13,19 @@ def prompt_for_keywords():
         return keywords
 
 
-def article_details(selected_idx, graph):
+def article_details(selected_idx, graph=None,  articles=None):
     # Display the details of the selected article
-    print("\nSelected Article Details:")
-    print(f"Title: {graph.metadata[selected_idx]['title']}")
-    print(f"Summary: {graph.metadata[selected_idx]['summary']}")
-    print(f"Link: {graph.metadata[selected_idx]['link']}")
+    if articles is None and graph is not None:
+        print("\nSelected Article Details:")
+        print(f"Title: {graph.metadata[selected_idx]['title']}")
+        print(f"Summary: {graph.metadata[selected_idx]['summary']}")
+        print(f"Link: {graph.metadata[selected_idx]['link']}")
+    if graph is None and articles is not None:
+        print("\nSelected Article Details:")
+        print(f"Title: {articles[selected_idx]['title']}")
+        print(f"Summary: {articles[selected_idx]['summary']}")
+        print(f"Link: {articles[selected_idx]['link']}")
+
 
 
 def choose_article(articles, batch_size):
@@ -45,18 +52,37 @@ def choose_article(articles, batch_size):
     return selected_idx
 
 
-def selection_pipeline(selected_idx, graph, model, batch_size):
-    # Function to give user an option to select an article
-    article_details(selected_idx, graph)
+def selection_pipeline(articles, batch_size, graph, model):
+    selected_idx = choose_article(articles, batch_size)
+
+    if selected_idx is not None:
+        # Function to give user an option to select an article
+        article_details(selected_idx, graph)
+
+        # Ask the user if he would like to translate
+        ask_for_translation(graph, selected_idx)
+
+        # Ask the user if he would like to see AI-generated summary of the article
+        get_summary(graph.metadata[selected_idx]['link'])
+
+        # Get recommendations for the selected article
+        reco = recommend_for_article(graph, model, selected_idx)
+        reco_full = find_elements(articles, reco)
+        answer = input("Do you wish to inspect the recommended articles?(y/n)")
+        if answer == "y":
+            return reco, reco_full
+
+        else:
+            return 0
+
+def r_inspection(reco_full, batch_size, graph):
+    # Chosen recommended articles' details
+    print("Now you can choose from recommended articles:")
+    selected_idx_reco = choose_article(reco_full, batch_size)
+    article_details(selected_idx_reco, articles=reco_full)
 
     # Ask the user if he would like to translate
-    ask_for_translation(graph, selected_idx)
+    ask_for_translation(graph, selected_idx_reco)
 
-    # Get recommendations for the selected article
-    print("Searching for recommended articles...\n")
-    reco = recommendations(graph, model, selected_idx)
-
-    # Chosen recommended articles' details
-    selected_idx_reco = choose_article(reco, batch_size)
-    article_details(selected_idx_reco, reco)
-    ask_for_translation(reco, selected_idx_reco)
+    # Ask the user if he would like to see AI-generated summary of the article
+    get_summary(graph.metadata[selected_idx_reco]['link'])
