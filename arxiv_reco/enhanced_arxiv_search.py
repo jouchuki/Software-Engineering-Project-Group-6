@@ -1,7 +1,7 @@
 from selection import prompt_for_keywords, selection_pipeline, r_inspection
 from arxiv_reco import prerequisites
 
-# Instantiate batch size of amount of articles shown
+# Instantiate batch_size --- amount of articles shown in one batch
 batch_size = 10
 
 
@@ -9,9 +9,6 @@ def main():
     while True:
         # Prompt for keywords
         keywords = prompt_for_keywords()
-
-        if keywords == 'exit':
-            break
 
         articles, graph, model = prerequisites(keywords)
 

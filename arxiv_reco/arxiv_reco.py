@@ -9,6 +9,7 @@ import numpy as np
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
+
 class ArxivReco(torch.nn.Module):
     def __init__(self, num_features):
         super(ArxivReco, self).__init__()

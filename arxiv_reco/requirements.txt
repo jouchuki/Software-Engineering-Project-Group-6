@@ -1,0 +1,10 @@
+transformers
+requests
+PyPDF2
+io
+ctranslate2
+sentencepiece
+torch
+torch_geometric
+bs4
+numpy
