@@ -6,6 +6,8 @@ from transformers import RobertaTokenizer, RobertaModel, RobertaForMaskedLM
 from torch_geometric.data import Data
 from bs4 import BeautifulSoup
 import numpy as np
+from pickle_util import write_temp_data
+import tempfile
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -42,15 +44,24 @@ roberta_model = RobertaModel.from_pretrained('roberta-base')
 
 ARXIV_API_URL = "http://export.arxiv.org/api/query?"
 
-
-def prerequisites(keywords):
-    articles = query_arxiv(keywords)
-    graph = construct_graph_from_embeddings(articles)
+def load_model(graph):
     model_path = "ArxivReco.pth"
     model = ArxivReco(graph.x.size(1)).to(device)
     model.load_state_dict(torch.load(model_path))
     model.eval()
-    return articles, graph, model
+    return model
+
+def prerequisites(keywords):
+    articles = query_arxiv(keywords)
+    if keywords is None:
+        raise Exception("Problem with fetching")
+    graph = construct_graph_from_embeddings(articles)
+
+    temp_art = tempfile.gettempdir() + '/articles_temp.pkl'
+    temp_graph = tempfile.gettempdir() + '/graph_temp.pkl'
+    write_temp_data(temp_art, articles)
+    write_temp_data(temp_graph, graph)
+    return articles, graph
 
 
 def get_roberta_embedding(text, model=roberta_model, tokenizer=tokenizer):
@@ -107,9 +118,10 @@ def construct_graph_from_embeddings(articles):
     return graph
 
 # 3. Predictions
-def recommend_for_article(graph, model, article_index, num_recommendations=10):
+def recommend_for_article(graph, article_index, num_recommendations=10):
     # For all possible edges between the given article and all other articles
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    model = load_model(graph)
     all_other_articles = torch.arange(graph.x.size(0), device=device)
     all_edges = torch.stack([torch.full_like(all_other_articles, article_index), all_other_articles])
 

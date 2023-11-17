@@ -1,33 +1,40 @@
+from frontend_st import ArxivFE
 from arxiv_reco import prerequisites
-from frontend import st_prompt_for_keywords, st_choose_article, st_article_details, st_r_inspection, st_selection_pipeline
+from pickle_util import read_temp_data, write_temp_data, delete_all_pkl_files
+import tempfile
 import streamlit as st
-
-# cd C:\Users\vsoko\PycharmProjects\SEProject\Software-Engineering-Project-Group-6\arxiv_reco
-# streamlit run C:/Users/vsoko/PycharmProjects/SEProject/Software-Engineering-Project-Group-6/arxiv_reco/app.py
-
+import sys
 
 def main():
-    # Instantiate batch_size --- amount of articles shown in one batch
-    batch_size = 10
+    sys.setrecursionlimit(50000)  # Be cautious with this
+    delete_all_pkl_files('/')
+    frontend = ArxivFE(batch_size=10)
+    keywords = frontend.st_prompt_for_keywords()
 
-    # Prompt for keywords
-    keywords = st_prompt_for_keywords()
+    # File paths for articles and graph
+    temp_art = tempfile.gettempdir() + '/articles_temp.pkl'
+    temp_graph = tempfile.gettempdir() + '/graph_temp.pkl'
 
-    # Proceed only if keywords are provided and not 'exit'
-    if keywords and keywords != 'exit':
-        articles, graph, model = prerequisites(keywords)
+    if keywords:
+        # Fetch new data
+        articles, graph = prerequisites(keywords)
+        # Save to temporary files
+        write_temp_data(temp_art, articles)
+        write_temp_data(temp_graph, graph)
+    else:
+        # Attempt to load from temporary files
+        articles = read_temp_data(temp_art)
+        graph = read_temp_data(temp_graph)
 
-        # Call st_selection_pipeline and check the returned value
-        result = st_selection_pipeline(articles, batch_size, graph, model)
+    # Proceed if we have articles and graph
+    if articles and graph:
+        result = frontend.st_selection_pipeline(articles, graph)
 
-        # Ensure that result is not None and unpack it
         if result:
             reco, reco_full = result
-            # Function that lets user inspect recommendations
-            st_r_inspection(reco_full, batch_size, graph)
-        else:
-            # Handle the case where result is None (e.g., show a message or take alternative action)
-            st.write("No recommendations available for the given keywords.")
+            # Handle recommendations display
+            frontend.st_r_inspection(reco_full, frontend.batch_size, graph)
 
 if __name__ == "__main__":
     main()
+
