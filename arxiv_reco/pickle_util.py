@@ -1,6 +1,5 @@
 import pickle
 import os
-import os
 import glob
 
 def delete_all_pkl_files(directory):

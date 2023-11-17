@@ -53,8 +53,6 @@ def load_model(graph):
 
 def prerequisites(keywords):
     articles = query_arxiv(keywords)
-    if keywords is None:
-        raise Exception("Problem with fetching")
     graph = construct_graph_from_embeddings(articles)
 
     temp_art = tempfile.gettempdir() + '/articles_temp.pkl'

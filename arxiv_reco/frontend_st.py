@@ -12,25 +12,12 @@ class ArxivFE:
 
     def st_prompt_for_keywords(self):
         st.write("ArXiv Recommendation System")
-        temp_file = tempfile.gettempdir() + '/keywords_temp.pkl'
-
-        existing_keywords = read_temp_data(temp_file)
-        if existing_keywords:
-            st.write(f"Previous keywords: {existing_keywords}")
-            return existing_keywords
 
         keywords = st.text_input("Enter keywords to search papers on ArXiv", key="keywords_input")
 
         if st.button("Search") and keywords:
-            write_temp_data(temp_file, keywords)
-            st.write(f"Keywords saved: {keywords}")
             return keywords
 
-        if st.button("End Session/Clear Keywords"):
-            delete_temp_file(temp_file)
-            st.write("Session data cleared.")
-            st.experimental_rerun()
-            return 0
 
     def st_article_details(self, selected_idx, graph=None, articles=None, reco_mode=False):
         # Whether what data is used depends on what mode the function is run
@@ -118,5 +105,10 @@ class ArxivFE:
             self.st_article_details(selected_idx, graph)
             reco = recommend_for_article(graph, selected_idx)
             reco_full = find_elements(articles, reco)
-            self.st_choose_article(self.batch_size, reco_full)
+            temp_reco = tempfile.gettempdir() + '/reco_temp.pkl'
+            write_temp_data(temp_reco, reco_full)
+            selected_idx_reco = self.st_choose_article(self.batch_size, reco_full)
+            if selected_idx_reco is not None:
+                self.st_article_details(selected_idx_reco, reco_full, reco_mode=True)
+
         return None, None
