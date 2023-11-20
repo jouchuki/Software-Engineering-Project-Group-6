@@ -18,12 +18,10 @@ def main():
         articles, graph, model = prerequisites(keywords)
 
         # Call st_selection_pipeline and check the returned value
-        result = st_selection_pipeline(articles, batch_size, graph, model)
+        reco_list = st_selection_pipeline(articles, batch_size, graph, model)
 
         # Ensure that result is not None and unpack it
-        if result:
-            reco, reco_list = result
-            # Function that lets user inspect recommendations
+        if reco_list:
             st_r_inspection(reco_list, batch_size, graph)
         else:
             # Handle the case where result is None (e.g., show a message or take alternative action)

@@ -53,10 +53,11 @@ def st_article_details(selected_idx, graph=None, articles=None):
 
 def st_choose_article(articles, batch_size, reco_list=None, reco_mode=False):
     # Function to loop through articles
+    # reco_mode is needed to toggle working with recommended articles
     # inputs:
-    # articles: a list to loop
+    # articles: a dictionary to loop
     # batch_size: amount of articles shown per batch
-    # reco_list: list of recommended indices, needed if reco_mode == True
+    # reco_list: a list of recommended indices from articles or graph.metadata, needed if reco_mode == True
     #
     # outputs:
     # selected_idx, selected article's id in that list
@@ -95,7 +96,12 @@ def st_choose_article(articles, batch_size, reco_list=None, reco_mode=False):
         return selected_idx
 
 
-def st_r_inspection(reco_full, batch_size, articles, reco_list):
+def st_r_inspection(batch_size, articles, reco_list):
+    # A function to inspect the recommended articles, similar to st_selection_pipeline
+    # inputs:
+    # batch_size: amount of articles shown on screen per batch
+    # articles: dictionary of articles
+    # reco_list: a list of recommended indices from articles or graph.metadata
     st.write("Now you can choose from recommended articles:")
 
     # Using a refactored Streamlit version of choose_article
@@ -103,17 +109,18 @@ def st_r_inspection(reco_full, batch_size, articles, reco_list):
 
     if selected_idx_reco is not None:
         # Display details of the selected article
-        st_article_details(selected_idx_reco, articles=reco_full)
-
-        # Ask for translation and summary
-        if st.button('Translate Article', key='translate_' + str(selected_idx_reco)):
-            trs_article(articles[selected_idx_reco]['link'])
-
-        if st.button('Get AI-Generated Summary', key='summary_' + str(selected_idx_reco)):
-            get_summary(articles[selected_idx_reco]['link'])
+        st_article_details(selected_idx_reco, articles)
 
 
 def st_selection_pipeline(articles, batch_size, graph, model):
+    # Function that handles the initial selection pipeline
+    # inputs:
+    # articles: dictionary of articles
+    # batch_size: amount of articles shown on screen per batch
+    # graph: pytorch Tensor of a graph for ArxivReco GNN
+    # model: pytorch_geometric GNN model
+    # outputs:
+    # reco_list: a list of recommended indices from articles or graph.metadata
     selected_idx = st_choose_article(articles, batch_size)
 
     if selected_idx is not None:
@@ -121,6 +128,5 @@ def st_selection_pipeline(articles, batch_size, graph, model):
         st_article_details(selected_idx, graph)
 
         # Get recommendations for the selected article
-        reco = recommend_for_article(graph, model, selected_idx)
-        reco_full = find_elements(articles, reco)
-        return reco, reco_full
+        reco_list = recommend_for_article(graph, model, selected_idx)
+        return reco_list
