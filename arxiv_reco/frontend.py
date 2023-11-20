@@ -8,6 +8,9 @@ from arxiv_reco import find_elements, recommend_for_article
 
 
 def st_prompt_for_keywords():
+    # Function that prompts user for keywords
+    # input: user query
+    # output: keywords
     st.write("ArXiv Recommendation System")
     keywords = st.text_input("Enter keywords to search papers on ArXiv")
     submit_button = st.button("Search")
@@ -19,6 +22,13 @@ def st_prompt_for_keywords():
 
 
 def st_article_details(selected_idx, graph=None, articles=None):
+    # Function that lists selected article details
+    # inputs:
+    # selected_idx: index of the selected article
+    # graph: if passing a pytorch Tensor
+    # articles: if passing a list of articles
+    # outputs: selected article details and buttons for further interactions
+
     # Determine the source of the data
     data_source = graph.metadata if graph is not None else articles
 
@@ -38,38 +48,58 @@ def st_article_details(selected_idx, graph=None, articles=None):
 
         # Button for summarization on demand
         if st.button("Summarise", key='summarize_' + str(selected_idx)):
-            get_summary(article['link'])
+            st.write("AI-generated summary: ", get_summary(article['link']))
 
 
-def st_choose_article(articles, batch_size):
-    selected_idx = None
-    start_index = 0
+def st_choose_article(articles, batch_size, reco_list=None, reco_mode=False):
+    # Function to loop through articles
+    # inputs:
+    # articles: a list to loop
+    # batch_size: amount of articles shown per batch
+    # reco_list: list of recommended indices, needed if reco_mode == True
+    #
+    # outputs:
+    # selected_idx, selected article's id in that list
+    if reco_mode is False and reco_list is None:
+        selected_idx = None
+        start_index = 0
 
-    while True:
-        end_index = min(start_index + batch_size, len(articles))
+        while True:
+            end_index = min(start_index + batch_size, len(articles))
 
-        # Display articles in the current batch with a "Go to Article" button
-        for j in range(start_index, end_index):
-            st.write(articles[j]['title'])
-            if st.button('Check', key=f'go_{j}'):
-                selected_idx = j
-                return selected_idx
+            # Display articles in the current batch with a "Go to Article" button
+            for j in range(start_index, end_index):
+                st.write(articles[j]['title'])
+                if st.button('Check', key=f'go_{j}'):
+                    selected_idx = j
+                    return selected_idx
 
-        # Navigation for batches
-        if start_index + batch_size < len(articles) and st.button('Next 10 Articles', key='next'):
-            start_index += batch_size
-        elif start_index > 0 and st.button('Previous 10 Articles', key='back'):
-            start_index -= batch_size
-        else:
-            break
-    return selected_idx
+            # Navigation for batches
+            if start_index + batch_size < len(articles) and st.button('Next 10 Articles', key='next'):
+                start_index += batch_size
+            elif start_index > 0 and st.button('Previous 10 Articles', key='back'):
+                start_index -= batch_size
+            else:
+                break
+        return selected_idx
+
+    if reco_mode is True and reco_list is not None:
+        selected_idx = None
+        while True:
+            # Display articles in the current batch with a "Go to Article" button
+            for j in reco_list:
+                st.write(articles[j]['title'])
+                if st.button('Check', key=f'go_{j}'):
+                    selected_idx = j
+                    return selected_idx
+        return selected_idx
 
 
-def st_r_inspection(reco_full, batch_size, graph):
+def st_r_inspection(reco_full, batch_size, articles, reco_list):
     st.write("Now you can choose from recommended articles:")
 
     # Using a refactored Streamlit version of choose_article
-    selected_idx_reco = st_choose_article(reco_full, batch_size)
+    selected_idx_reco = st_choose_article(articles, batch_size, reco_list=reco_list, reco_mode=True)
 
     if selected_idx_reco is not None:
         # Display details of the selected article
@@ -77,10 +107,10 @@ def st_r_inspection(reco_full, batch_size, graph):
 
         # Ask for translation and summary
         if st.button('Translate Article', key='translate_' + str(selected_idx_reco)):
-            trs_article(graph.metadata[selected_idx_reco]['link'])
+            trs_article(articles[selected_idx_reco]['link'])
 
         if st.button('Get AI-Generated Summary', key='summary_' + str(selected_idx_reco)):
-            get_summary(graph.metadata[selected_idx_reco]['link'])
+            get_summary(articles[selected_idx_reco]['link'])
 
 
 def st_selection_pipeline(articles, batch_size, graph, model):

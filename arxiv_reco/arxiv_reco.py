@@ -128,7 +128,8 @@ def recommend_for_article(graph, model, article_index, num_recommendations=10):
 
     # Return the top article indices
     print(sorted_indices[:num_recommendations].cpu().numpy())
-    return sorted_indices[:num_recommendations].cpu().numpy()
+    print(sorted_indices[:num_recommendations].cpu().tolist())
+    return sorted_indices[:num_recommendations].cpu().tolist()
 
 
 def find_elements(articles, reco):

@@ -22,9 +22,9 @@ def main():
 
         # Ensure that result is not None and unpack it
         if result:
-            reco, reco_full = result
+            reco, reco_list = result
             # Function that lets user inspect recommendations
-            st_r_inspection(reco_full, batch_size, graph)
+            st_r_inspection(reco_list, batch_size, graph)
         else:
             # Handle the case where result is None (e.g., show a message or take alternative action)
             st.write("No recommendations available for the given keywords.")
