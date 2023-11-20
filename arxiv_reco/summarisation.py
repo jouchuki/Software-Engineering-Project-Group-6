@@ -3,7 +3,6 @@ import requests
 import PyPDF2
 import io
 
-
 def get_summary(link):
     answer = input("Do you want to get an AI-generated summary of the full article?(y/n)")
     if answer == "y":
@@ -17,26 +16,29 @@ def get_summary(link):
         )
 
         # Download the PDF
-        response = requests.get(link)
-        file_stream = io.BytesIO(response.content)
+        arxiv_id = link.split("/")[-1]
 
-        try:
-            pdf_reader = PyPDF2.PdfReader(file_stream)
-            # Your code to process the PDF
-        except PyPDF2.errors.PdfReadError as e:
-            print("Error reading PDF file:", e)
-            # Additional error handling or alternative actions
+        # Construct the PDF URL
+        pdf_url = f'https://arxiv.org/pdf/{arxiv_id}.pdf'
 
-        text = ''
-        for page in pdf_reader.pages:
-            text += page.extract_text() + '\n'
+        # Download the PDF file
+        response = requests.get(pdf_url)
 
-        # Basic Preprocessing (example: removing newline characters)
-        processed_text = text.replace('\n', ' ')
+        if response.status_code == 200:
+            # Create a BytesIO object from the downloaded content
+            pdf_bytes = io.BytesIO(response.content)
 
-        # Generate the summary
-        summary = summarizer(processed_text, max_length=250, min_length=15, do_sample=False)[0]['summary_text']
+            # Create a PDF reader object
+            pdf_reader = PyPDF2.PdfReader(pdf_bytes)
 
-        # Print the generated summary
-        print("Summary:", summary)
-        return summary
+            # Extract text from each page
+            text = ''
+            for page_number in range(len(pdf_reader.pages)):
+                text += pdf_reader.pages[page_number].extract_text()
+
+            processed_text = text.replace('\n', ' ')
+            summary = summarizer(processed_text, max_length=250, min_length=15, do_sample=False)[0]['summary_text']
+            return summary
+        else:
+            print(f"Failed to download PDF from {pdf_url}. Status code: {response.status_code}")
+            return None
