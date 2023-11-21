@@ -8,24 +8,30 @@ import streamlit as st
 
 def main():
     # Instantiate batch_size --- amount of articles shown in one batch
-    batch_size = 10
+    if 'batch_size' not in st.session_state:
+        st.session_state['batch_size'] = 10
 
     # Prompt for keywords
-    keywords = st_prompt_for_keywords()
+    if 'keywords' not in st.session_state:
+        st.session_state['keywords'] = st_prompt_for_keywords()
 
-    # Proceed only if keywords are provided and not 'exit'
-    if keywords and keywords != 'exit':
-        articles, graph, model = prerequisites(keywords)
+        # Proceed only if keywords are provided
+        if st.session_state.keywords:
+            st.session_state['articles'], st.session_state['graph'], st.session_state['model'] = prerequisites(
+                st.session_state['keywords'])
 
-        # Call st_selection_pipeline and check the returned value
-        reco_list = st_selection_pipeline(articles, batch_size, graph, model)
+            # Call st_selection_pipeline and check the returned value
+            if 'reco_list' not in st.session_state:
+                st.session_state['reco_list'] = st_selection_pipeline(st.session_state.articles,
+                                                                      st.session_state.batch_size,
+                                                                      st.session_state.graph, st.session_state.model)
 
-        # Ensure that result is not None and unpack it
-        if reco_list:
-            st_r_inspection(reco_list, batch_size, graph)
-        else:
-            # Handle the case where result is None (e.g., show a message or take alternative action)
-            st.write("No recommendations available for the given keywords.")
+            # Ensure that result is not None
+            if st.session_state.reco_list:
+                st_r_inspection(st.session_state.reco_list, st.session_state.batch_size, st.session_state.graph)
+            else:
+                # Handle the case where result is None (e.g., show a message or take alternative action)
+                st.write("No recommendations available for the given keywords.")
 
 if __name__ == "__main__":
     main()

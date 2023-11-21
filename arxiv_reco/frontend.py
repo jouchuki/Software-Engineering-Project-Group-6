@@ -4,7 +4,7 @@
 import streamlit as st
 from translate import trs_article
 from summarisation import get_summary
-from arxiv_reco import find_elements, recommend_for_article
+from arxiv_reco import recommend_for_article
 
 
 def st_prompt_for_keywords():
