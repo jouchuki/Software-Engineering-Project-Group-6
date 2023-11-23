@@ -46,7 +46,7 @@ ARXIV_API_URL = "http://export.arxiv.org/api/query?"
 def prerequisites(keywords):
     articles = query_arxiv(keywords)
     graph = construct_graph_from_embeddings(articles)
-    model_path = "ArxivReco.pth"
+    model_path = "C:\\Users\\vsoko\\PycharmProjects\\SEProject\\Software-Engineering-Project-Group-6\\arxiv_reco\\ArxivReco.pth"
     model = ArxivReco(graph.x.size(1)).to(device)
     model.load_state_dict(torch.load(model_path))
     model.eval()
