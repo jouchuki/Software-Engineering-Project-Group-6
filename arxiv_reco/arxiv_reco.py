@@ -118,7 +118,7 @@ def construct_graph_from_embeddings(articles):
 
 
 # 3. Predictions
-def recommend_for_article(graph, article_index, num_recommendations=10, model=model):
+def recommend_for_article(graph, article_index, model, num_recommendations=10):
     # For all possible edges between the given article and all other articles
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     all_other_articles = torch.arange(graph.x.size(0), device=device)

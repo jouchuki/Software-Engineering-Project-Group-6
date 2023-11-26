@@ -114,16 +114,16 @@ def call_recommend_api(graph_data, article_index, num_recommendations=10):
 
 # Example usage
 if __name__ == "__main__":
-    start_uvicorn_server(8000, "translate_api")
+    #start_uvicorn_server(8000, "translate_api")
     start_uvicorn_server(8001, "arxiv_reco_api")
-    start_uvicorn_server(8002, "call_summarisation")
-    pdf_link = "https://arxiv.org/pdf/2311.13546"  # Replace with your actual PDF link
+    #start_uvicorn_server(8002, "call_summarisation")
+    '''pdf_link = "https://arxiv.org/pdf/2311.13546"  # Replace with your actual PDF link
     summary_text = call_summary_api(pdf_link)
     if summary_text:
         print("Summary Text Retrieved Successfully:")
         print(summary_text)
     else:
-        print("Failed to retrieve summary text.")
+        print("Failed to retrieve summary text.")'''
     keywords = "gnn"  # Replace with your actual keywords
     json_data = call_get_data_api(keywords)
     if json_data:
@@ -131,12 +131,12 @@ if __name__ == "__main__":
         print(json_data['articles'], json_data['graph'])
     else:
         print("Failed to retrieve graph data.")
-    input_text = "In the first place of European Union"
+    '''input_text = "In the first place of European Union"
     translated_text = call_translate_api(input_text)
     if translated_text:
         print(f"Translated Text: {translated_text}")
     else:
-        print("No translation was returned.")
+        print("No translation was returned.")'''
     article_index = 5
     if json_data:
         graph_data = json_data['graph']

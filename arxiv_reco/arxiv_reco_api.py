@@ -10,6 +10,8 @@ import os
 from pydantic import BaseModel
 from fastapi import FastAPI, HTTPException
 from typing import List
+import traceback
+from fastapi.responses import JSONResponse
 
 # Set up the path as the current directory of the file to not run into FileNotFoundError when trying to locate the model
 script_path = os.path.abspath(__file__)
@@ -145,7 +147,7 @@ def construct_graph_from_embeddings(articles):
 # 3. Predictions
 def recommend_for_article(graph, article_index, num_recommendations=10):
     model_path = "ArxivReco.pth"
-    model = ArxivReco(graph.x.size).to(device)  # 1536 features ( two roberta vectors )
+    model = ArxivReco(graph.x.size(1)).to(device)  # 1536 features ( two roberta vectors )
     model.load_state_dict(torch.load(model_path))
     model.eval()
 
@@ -166,22 +168,9 @@ def recommend_for_article(graph, article_index, num_recommendations=10):
     _, sorted_relative_indices = filtered_predictions.sort(descending=True)
     sorted_indices = filtered_indices[sorted_relative_indices]
 
-    # Get probabilities and indices
-    probabilities, sorted_indices = torch.sort(predictions, descending=True)
-
-    # Filter out the input article index from the recommendations
-    mask = all_other_articles != article_index
-    filtered_probabilities = probabilities[mask]
-    filtered_indices = sorted_indices[mask]
-
-    # Get the top article indices along with their probabilities
-    top_indices = filtered_indices[:num_recommendations]
-    top_probabilities = filtered_probabilities[:num_recommendations]
-
-    print(top_indices, top_probabilities)
     # Return the top article indices
-    print(sorted_indices[:num_recommendations].cpu().numpy())
-    print(sorted_indices[:num_recommendations].cpu().tolist())
+    #print(sorted_indices[:num_recommendations].cpu().numpy())
+    #print(sorted_indices[:num_recommendations].cpu().tolist())
     return sorted_indices[:num_recommendations].cpu().tolist()
 
 
@@ -225,4 +214,8 @@ async def recommend_articles(request: RecommendRequest, graph_data: GraphModel):
         )
         return {"recommended_indices": recommended_indices}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        error_details = {
+            "error": str(e),
+            "traceback": traceback.format_exc()
+        }
+        return JSONResponse(status_code=500, content=error_details)
