@@ -23,7 +23,7 @@ def main():
 
     # Step 3: Load Data and Prerequisites
     if st.session_state['keywords'] is not None and not st.session_state['articles']:
-        st.session_state['articles'], st.session_state['graph'], st.session_state['model'] = prerequisites(st.session_state['keywords'])
+        st.session_state['articles'], st.session_state['graph'] = prerequisites(st.session_state['keywords'])
 
     if st.session_state['articles']:
         article_selectbox(st.session_state['articles'])

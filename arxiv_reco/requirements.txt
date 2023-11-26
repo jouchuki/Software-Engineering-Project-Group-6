@@ -8,3 +8,7 @@ torch
 torch_geometric
 bs4
 numpy
+streamlit
+fastapi
+pydantic
+typing

@@ -55,7 +55,7 @@ def article_selectbox(articles, reco_list_key='reco_list'):
             summarize_article(selected_article)
 
         if st.button("Show Similar", key='reco_' + str(st.session_state['selected_idx'])):
-            update_recommendations(st.session_state['graph'], st.session_state['model'], st.session_state['selected_idx'], reco_list_key)
+            update_recommendations(st.session_state['graph'], st.session_state['selected_idx'], reco_list_key)
 
     else:
         st.write("No article has been chosen!")
@@ -79,11 +79,11 @@ def summarize_article(article):
     st.write("AI-generated summary: ", get_summary(article['link'], streamlit_mode=True))
 
 
-def update_recommendations(graph, model, selected_idx, reco_list_key):
-    st.session_state[reco_list_key] = recommend_for_article(graph, model, selected_idx)
+def update_recommendations(graph, selected_idx, reco_list_key):
+    st.session_state[reco_list_key] = recommend_for_article(graph, selected_idx)
     # Reset the selected index as we now have a new list of articles
     st.session_state['selected_idx'] = None
     # Refresh the page to update the list
-    st.experimental_rerun()
+    st.rerun()
 
 

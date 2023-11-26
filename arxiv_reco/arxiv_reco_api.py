@@ -7,7 +7,9 @@ from torch_geometric.data import Data
 from bs4 import BeautifulSoup
 import numpy as np
 import os
-
+from pydantic import BaseModel
+from fastapi import FastAPI, HTTPException
+from typing import List
 
 # Set up the path as the current directory of the file to not run into FileNotFoundError when trying to locate the model
 script_path = os.path.abspath(__file__)
@@ -15,6 +17,31 @@ script_dir = os.path.dirname(script_path)
 os.chdir(script_dir)
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+
+class ArticleModel(BaseModel):
+    # Set up the pydantic model class to be able to send it through fastapi later
+    title: str
+    summary: str
+    link: str
+    title_embedding: List[float]
+    summary_embedding: List[float]
+
+
+class GraphModel(BaseModel):
+    # Set up the pydantic model class to be able to send it through fastapi later
+    x: List[List[float]]
+    metadata: List[ArticleModel]
+
+
+class CombinedResponseModel(BaseModel):
+    articles: List[ArticleModel]
+    graph: GraphModel
+
+
+class RecommendRequest(BaseModel):
+    article_index: int
+    num_recommendations: int = 10  # Default value
 
 
 class ArxivReco(torch.nn.Module):
@@ -47,20 +74,18 @@ class ArxivReco(torch.nn.Module):
 tokenizer = RobertaTokenizer.from_pretrained('roberta-base')
 roberta_model = RobertaModel.from_pretrained('roberta-base')
 
-# Load the ArxivReco class model
 ARXIV_API_URL = "http://export.arxiv.org/api/query?"
+
+app = FastAPI()
 
 
 def prerequisites(keywords):
     articles = query_arxiv(keywords)
     graph = construct_graph_from_embeddings(articles)
-    model_path = "ArxivReco.pth"
-    model = ArxivReco(1536).to(device)  # 1536 features ( two roberta vectors )
-    model.load_state_dict(torch.load(model_path))
-    model.eval()
-    return articles, graph, model
+    return articles, graph
 
 
+# Function used to embed the title and summary of the article
 def get_roberta_embedding(text, model=roberta_model, tokenizer=tokenizer):
     # Tokenize the text and convert it to tensor format
     inputs = tokenizer(text, return_tensors="pt", max_length=512, truncation=True)
@@ -118,9 +143,13 @@ def construct_graph_from_embeddings(articles):
 
 
 # 3. Predictions
-def recommend_for_article(graph, article_index, num_recommendations=10, model=model):
+def recommend_for_article(graph, article_index, num_recommendations=10):
+    model_path = "ArxivReco.pth"
+    model = ArxivReco(graph.x.size).to(device)  # 1536 features ( two roberta vectors )
+    model.load_state_dict(torch.load(model_path))
+    model.eval()
+
     # For all possible edges between the given article and all other articles
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     all_other_articles = torch.arange(graph.x.size(0), device=device)
     all_edges = torch.stack([torch.full_like(all_other_articles, article_index), all_other_articles])
 
@@ -137,7 +166,63 @@ def recommend_for_article(graph, article_index, num_recommendations=10, model=mo
     _, sorted_relative_indices = filtered_predictions.sort(descending=True)
     sorted_indices = filtered_indices[sorted_relative_indices]
 
+    # Get probabilities and indices
+    probabilities, sorted_indices = torch.sort(predictions, descending=True)
+
+    # Filter out the input article index from the recommendations
+    mask = all_other_articles != article_index
+    filtered_probabilities = probabilities[mask]
+    filtered_indices = sorted_indices[mask]
+
+    # Get the top article indices along with their probabilities
+    top_indices = filtered_indices[:num_recommendations]
+    top_probabilities = filtered_probabilities[:num_recommendations]
+
+    print(top_indices, top_probabilities)
     # Return the top article indices
     print(sorted_indices[:num_recommendations].cpu().numpy())
     print(sorted_indices[:num_recommendations].cpu().tolist())
     return sorted_indices[:num_recommendations].cpu().tolist()
+
+
+@app.post("/get-data/", response_model=CombinedResponseModel)
+async def get_data(keywords: str):
+    articles = query_arxiv(keywords)
+    graph = construct_graph_from_embeddings(articles)
+
+    articles_data = [ArticleModel(
+        title=article['title'],
+        summary=article['summary'],
+        link=article['link'],
+        title_embedding=article['title_embedding'],
+        summary_embedding=article['summary_embedding']
+    ) for article in articles]
+
+    graph_data = GraphModel(
+        x=graph.x.tolist(),  # Assuming graph.x is a 2D tensor
+        metadata=articles_data
+    )
+
+    combined_response = CombinedResponseModel(
+        articles=articles_data,
+        graph=graph_data
+    )
+
+    return combined_response
+
+
+@app.post("/recommend/")
+async def recommend_articles(request: RecommendRequest, graph_data: GraphModel):
+    try:
+        # Reconstruct the graph from graph_data
+        x = torch.tensor(graph_data.x, dtype=torch.float)
+        graph = Data(x=x, metadata=graph_data.metadata)  # Assume Data is your graph class
+
+        recommended_indices = recommend_for_article(
+            graph=graph,
+            article_index=request.article_index,
+            num_recommendations=request.num_recommendations
+        )
+        return {"recommended_indices": recommended_indices}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

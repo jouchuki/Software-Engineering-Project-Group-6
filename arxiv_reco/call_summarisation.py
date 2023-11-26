@@ -2,9 +2,11 @@ from transformers import pipeline
 import requests
 import PyPDF2
 import io
+from fastapi import FastAPI, HTTPException
+import requests
 
-
-def get_summary(link, streamlit_mode=False):
+app = FastAPI()
+def get_summary(link, streamlit_mode=True):
     if streamlit_mode is False:
         answer = input("Do you want to get an AI-generated summary of the full article?(y/n)")
         if answer == "y":
@@ -12,7 +14,7 @@ def get_summary(link, streamlit_mode=False):
                 task="summarization",
                 model="t5-small",
                 min_length=20,
-                max_length=40,
+                max_length=150,
                 truncation=True,
                 model_kwargs={"cache_dir": '/Documents/Huggin_Face/'},
             )
@@ -49,7 +51,7 @@ def get_summary(link, streamlit_mode=False):
             task="summarization",
             model="t5-small",
             min_length=20,
-            max_length=40,
+            max_length=150,
             truncation=True,
             model_kwargs={"cache_dir": '/Documents/Huggin_Face/'},
         )
@@ -82,3 +84,9 @@ def get_summary(link, streamlit_mode=False):
             print(f"Failed to download PDF from {pdf_url}. Status code: {response.status_code}")
             return None
 
+@app.post("/summary/")
+async def summary_api(link: str):
+    try:
+        return {"summary text": get_summary(link)}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
