@@ -1,12 +1,6 @@
 import requests
 import subprocess
 
-
-def start_uvicorn_server(port, app):
-    cmd = f"uvicorn {app}:app --reload --port {port}"
-    subprocess.Popen(cmd, shell=True)
-
-
 def call_translate_api(input_text):
     # URL of the FastAPI endpoint with query parameter
     url = f'http://127.0.0.1:8000/translate/?input_text={input_text}'
@@ -47,7 +41,7 @@ def call_get_data_api(keywords):
         if response.status_code == 200:
             # Parse the response JSON to get the graph data
             json_data = response.json()
-            return json_data
+            return json_data['articles'], json_data['graph']
         else:
             print(f"Error: {response.status_code}, {response.text}")
             return None
@@ -113,17 +107,17 @@ def call_recommend_api(graph_data, article_index, num_recommendations=10):
 
 
 # Example usage
-if __name__ == "__main__":
+'''if __name__ == "__main__":
     #start_uvicorn_server(8000, "translate_api")
     start_uvicorn_server(8001, "arxiv_reco_api")
     #start_uvicorn_server(8002, "call_summarisation")
-    '''pdf_link = "https://arxiv.org/pdf/2311.13546"  # Replace with your actual PDF link
+    pdf_link = "https://arxiv.org/pdf/2311.13546"  # Replace with your actual PDF link
     summary_text = call_summary_api(pdf_link)
     if summary_text:
         print("Summary Text Retrieved Successfully:")
         print(summary_text)
     else:
-        print("Failed to retrieve summary text.")'''
+        print("Failed to retrieve summary text.")
     keywords = "gnn"  # Replace with your actual keywords
     json_data = call_get_data_api(keywords)
     if json_data:
@@ -131,12 +125,12 @@ if __name__ == "__main__":
         print(json_data['articles'], json_data['graph'])
     else:
         print("Failed to retrieve graph data.")
-    '''input_text = "In the first place of European Union"
+    input_text = "In the first place of European Union"
     translated_text = call_translate_api(input_text)
     if translated_text:
         print(f"Translated Text: {translated_text}")
     else:
-        print("No translation was returned.")'''
+        print("No translation was returned.")
     article_index = 5
     if json_data:
         graph_data = json_data['graph']
@@ -144,4 +138,4 @@ if __name__ == "__main__":
         if recommendations is not None:
             print("Recommended article indices:", recommendations)
         else:
-            print("Failed to get recommendations.")
+            print("Failed to get recommendations.")'''

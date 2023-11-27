@@ -6,6 +6,8 @@ from fastapi import FastAPI, HTTPException
 import requests
 
 app = FastAPI()
+
+
 def get_summary(link, streamlit_mode=True):
     if streamlit_mode is False:
         answer = input("Do you want to get an AI-generated summary of the full article?(y/n)")

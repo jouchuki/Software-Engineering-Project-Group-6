@@ -4,8 +4,8 @@ import sentencepiece as spm
 
 app = FastAPI()
 
+
 def trs_article(input_text):
-    # Your translation function setup
     translator = ctranslate2.Translator("C:/Users/vsoko/Downloads/ct_model")
     sp_source = spm.SentencePieceProcessor("C:/Users/vsoko/Downloads/source.model")
     sp_target = spm.SentencePieceProcessor("C:/Users/vsoko/Downloads/target.model")
@@ -16,6 +16,7 @@ def trs_article(input_text):
     output_text = sp_target.decode(output_tokens)
 
     return output_text
+
 
 @app.post("/translate/")
 async def translate(input_text: str):

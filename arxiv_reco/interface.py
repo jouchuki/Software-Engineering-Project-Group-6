@@ -1,8 +1,5 @@
 import streamlit as st
-from translate import trs_article
-from summarisation import get_summary
-from arxiv_reco import recommend_for_article
-
+from model_requests import call_translate_api, call_summary_api, call_recommend_api
 
 def st_prompt():
     # Function that prompts user for keywords
@@ -71,16 +68,16 @@ def display_article_details(article):
 
 
 def translate_article(article):
-    st.write(f"Translated Title: {trs_article(article['title'])}")
-    st.write(f"Translated Summary: {trs_article(article['summary'])}")
+    st.write(f"Translated Title: {call_translate_api(article['title'])}")
+    st.write(f"Translated Summary: {call_translate_api(article['summary'])}")
 
 
 def summarize_article(article):
-    st.write("AI-generated summary: ", get_summary(article['link'], streamlit_mode=True))
+    st.write("AI-generated summary: ", call_summary_api(article['link']))
 
 
 def update_recommendations(graph, selected_idx, reco_list_key):
-    st.session_state[reco_list_key] = recommend_for_article(graph, selected_idx)
+    st.session_state[reco_list_key] = call_recommend_api(graph, selected_idx)
     # Reset the selected index as we now have a new list of articles
     st.session_state['selected_idx'] = None
     # Refresh the page to update the list

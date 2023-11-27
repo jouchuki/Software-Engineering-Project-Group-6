@@ -1,6 +1,6 @@
-from arxiv_reco import prerequisites, recommend_for_article
 from interface import st_prompt, article_selectbox
 import streamlit as st
+from model_requests import call_get_data_api
 
 # cd C:\Users\vsoko\PycharmProjects\SEProject\Software-Engineering-Project-Group-6\arxiv_reco
 # streamlit run C:/Users/vsoko/PycharmProjects/SEProject/Software-Engineering-Project-Group-6/arxiv_reco/app.py
@@ -23,7 +23,7 @@ def main():
 
     # Step 3: Load Data and Prerequisites
     if st.session_state['keywords'] is not None and not st.session_state['articles']:
-        st.session_state['articles'], st.session_state['graph'] = prerequisites(st.session_state['keywords'])
+        st.session_state['articles'], st.session_state['graph'] = call_get_data_api(st.session_state['keywords'])
 
     if st.session_state['articles']:
         article_selectbox(st.session_state['articles'])
