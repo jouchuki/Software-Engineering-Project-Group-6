@@ -86,6 +86,7 @@ def get_summary(link, streamlit_mode=True):
             print(f"Failed to download PDF from {pdf_url}. Status code: {response.status_code}")
             return None
 
+
 @app.post("/summary/")
 async def summary_api(link: str):
     try:

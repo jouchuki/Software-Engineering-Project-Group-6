@@ -1,9 +1,25 @@
 import requests
-import subprocess
+
+
+ec2_translate = {
+    "ip": "ec2-13-49-68-83.eu-north-1.compute.amazonaws.com",   # model_translation_06
+    "port": "8000"  # Update with the correct port for your FastAPI app on EC2 Instance 1
+}
+
+ec2_reco = {
+    "ip": "ec2-16-170-223-201.eu-north-1.compute.amazonaws.com",   # 06_reco
+    "port": "8001"  # Update with the correct port for your FastAPI app on EC2 Instance 2
+}
+
+ec2_summarise = {
+    "ip": "ec2-13-53-176-147.eu-north-1.compute.amazonaws.com",   # 06_summary
+    "port": "8002"  # Update with the correct port for your FastAPI app on EC2 Instance 2
+}
+
 
 def call_translate_api(input_text):
     # URL of the FastAPI endpoint with query parameter
-    url = f'http://127.0.0.1:8000/translate/?input_text={input_text}'
+    url = f'http://{ec2_translate["ip"]}:{ec2_translate["port"]}/translate/?input_text={input_text}'
 
     try:
         # Make a POST request to the FastAPI server
@@ -28,7 +44,7 @@ def call_translate_api(input_text):
 
 def call_get_data_api(keywords):
     # URL of the FastAPI endpoint
-    url = f'http://127.0.0.1:8001/get-data/?keywords={keywords}'
+    url = f'http://{ec2_reco["ip"]}:{ec2_reco["port"]}/get-data/?keywords={keywords}'
 
     # Prepare the data to be sent in the POST request
     data = {"keywords": keywords}
@@ -52,7 +68,7 @@ def call_get_data_api(keywords):
 
 def call_summary_api(pdf_link):
     # URL of the FastAPI endpoint
-    url = f'http://127.0.0.1:8002/summary/?link={pdf_link}'
+    url = f'http://{ec2_summarise["ip"]}:{ec2_summarise["port"]}/summary/?link={pdf_link}'
 
     # Prepare the data to be sent in the POST request
     data = {"link": pdf_link}
@@ -79,7 +95,7 @@ def call_summary_api(pdf_link):
 
 
 def call_recommend_api(graph_data, article_index, num_recommendations=10):
-    url = 'http://127.0.0.1:8001/recommend/'
+    url = f'http://{ec2_reco["ip"]}:{ec2_reco["port"]}/recommend/'
 
     data = {
         "request": {
