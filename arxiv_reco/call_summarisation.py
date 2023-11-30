@@ -5,6 +5,9 @@ import io
 from fastapi import FastAPI, HTTPException
 import requests
 
+# File that calls for summarisation of given text
+# File that was uploaded to 06_summary
+
 app = FastAPI()
 
 

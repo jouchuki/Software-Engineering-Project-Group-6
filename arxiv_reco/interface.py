@@ -1,6 +1,9 @@
 import streamlit as st
 from model_requests import call_translate_api, call_summary_api, call_recommend_api
 
+# This file contains all the functions that app.py uses
+# File that was uploaded to 06_app instance
+
 def st_prompt():
     # Function that prompts user for keywords
     # input: user query

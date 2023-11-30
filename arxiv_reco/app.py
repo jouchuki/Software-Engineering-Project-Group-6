@@ -5,6 +5,8 @@ from model_requests import call_get_data_api
 # cd C:\Users\vsoko\PycharmProjects\SEProject\Software-Engineering-Project-Group-6\arxiv_reco
 # streamlit run C:/Users/vsoko/PycharmProjects/SEProject/Software-Engineering-Project-Group-6/arxiv_reco/app.py
 
+# Main app logic
+# # File that was uploaded to 06_app
 
 def main():
     # Step 1: Initialize Session State Variables

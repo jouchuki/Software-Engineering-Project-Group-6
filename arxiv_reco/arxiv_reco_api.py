@@ -13,6 +13,9 @@ from typing import List
 import traceback
 from fastapi.responses import JSONResponse
 
+# This file contains classes of the data that the model sends, the instantiation of the model itself and prediction + prerequisites
+# File that was uploaded to 06_reco
+
 # Set up the path as the current directory of the file to not run into FileNotFoundError when trying to locate the model
 script_path = os.path.abspath(__file__)
 script_dir = os.path.dirname(script_path)
@@ -37,11 +40,13 @@ class GraphModel(BaseModel):
 
 
 class CombinedResponseModel(BaseModel):
+    # Set up the pydantic model class to be able to send it through fastapi later
     articles: List[ArticleModel]
     graph: GraphModel
 
 
 class RecommendRequest(BaseModel):
+    # Set up the pydantic model class to be able to send it through fastapi later
     article_index: int
     num_recommendations: int = 10  # Default value
 
@@ -76,12 +81,16 @@ class ArxivReco(torch.nn.Module):
 tokenizer = RobertaTokenizer.from_pretrained('roberta-base')
 roberta_model = RobertaModel.from_pretrained('roberta-base')
 
+# Base arXiv API url
 ARXIV_API_URL = "http://export.arxiv.org/api/query?"
 
+# Instantiation of the FastAPI link
 app = FastAPI()
 
 
 def prerequisites(keywords):
+    # Receives keywords from streamlit
+    # Returns list of dictionaries of articles and a graph
     articles = query_arxiv(keywords)
     graph = construct_graph_from_embeddings(articles)
     return articles, graph
@@ -89,6 +98,7 @@ def prerequisites(keywords):
 
 # Function used to embed the title and summary of the article
 def get_roberta_embedding(text, model=roberta_model, tokenizer=tokenizer):
+    # Embeds text(title and summary)
     # Tokenize the text and convert it to tensor format
     inputs = tokenizer(text, return_tensors="pt", max_length=512, truncation=True)
 
@@ -102,6 +112,7 @@ def get_roberta_embedding(text, model=roberta_model, tokenizer=tokenizer):
 
 # 1. Fetch Data from ArXiv
 def query_arxiv(keywords, max_results=100):
+    # Function to query arXiv, returns a list of dictionaries
     query = f"search_query=all:{keywords}&start=0&max_results={max_results}"
     response = requests.get(ARXIV_API_URL + query)
 
@@ -130,6 +141,7 @@ def query_arxiv(keywords, max_results=100):
 
 # 2. Preprocess & Construct Graph
 def construct_graph_from_embeddings(articles):
+    # Constructs a graph to make inference
     node_features_title = [article['title_embedding'] for article in articles]
     node_features_summary = [article['summary_embedding'] for article in articles]
 
@@ -146,6 +158,7 @@ def construct_graph_from_embeddings(articles):
 
 # 3. Predictions
 def recommend_for_article(graph, article_index, num_recommendations=10):
+    # Function to make recommendations on the fetched data
     model_path = "ArxivReco.pth"
     model = ArxivReco(graph.x.size(1)).to(device)  # 1536 features ( two roberta vectors )
     model.load_state_dict(torch.load(model_path))
@@ -169,13 +182,14 @@ def recommend_for_article(graph, article_index, num_recommendations=10):
     sorted_indices = filtered_indices[sorted_relative_indices]
 
     # Return the top article indices
-    #print(sorted_indices[:num_recommendations].cpu().numpy())
+    #print(sorted_indices[:num_recommendations].cpu().numpy()) - both commented out for redundancy, debugging purposes
     #print(sorted_indices[:num_recommendations].cpu().tolist())
     return sorted_indices[:num_recommendations].cpu().tolist()
 
 
 @app.post("/get-data/", response_model=CombinedResponseModel)
 async def get_data(keywords: str):
+    # FastAPI endpoint for prerequisites()
     articles = query_arxiv(keywords)
     graph = construct_graph_from_embeddings(articles)
 
@@ -202,6 +216,7 @@ async def get_data(keywords: str):
 
 @app.post("/recommend/")
 async def recommend_articles(request: RecommendRequest, graph_data: GraphModel):
+    # FastAPI endpoint for recommend_for_articles()
     try:
         # Reconstruct the graph from graph_data
         x = torch.tensor(graph_data.x, dtype=torch.float)

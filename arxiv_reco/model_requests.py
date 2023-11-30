@@ -1,19 +1,20 @@
 import requests
-
+# This file contains the functions for each possible action that would require to make a call to a different server
+# File that was uploaded to 06_app
 
 ec2_translate = {
     "ip": "ec2-13-49-68-83.eu-north-1.compute.amazonaws.com",   # model_translation_06
-    "port": "8000"  # Update with the correct port for your FastAPI app on EC2 Instance 1
+    "port": "8000"
 }
 
 ec2_reco = {
     "ip": "ec2-16-170-223-201.eu-north-1.compute.amazonaws.com",   # 06_reco
-    "port": "8001"  # Update with the correct port for your FastAPI app on EC2 Instance 2
+    "port": "8001"
 }
 
 ec2_summarise = {
     "ip": "ec2-13-53-176-147.eu-north-1.compute.amazonaws.com",   # 06_summary
-    "port": "8002"  # Update with the correct port for your FastAPI app on EC2 Instance 2
+    "port": "8002"
 }
 
 
@@ -122,7 +123,7 @@ def call_recommend_api(graph_data, article_index, num_recommendations=10):
         return None
 
 
-# Example usage
+# Example usage and testing
 '''if __name__ == "__main__":
     #start_uvicorn_server(8000, "translate_api")
     start_uvicorn_server(8001, "arxiv_reco_api")
